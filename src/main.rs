@@ -1,6 +1,62 @@
+use clap::Parser;
 use rand::Rng;
 use std::f64::consts::PI;
-use std::io;
+use std::io::{self, Read, Write};
+use std::path::PathBuf;
+
+const HELP_TEMPLATE: &str = "\
+{before-help}{about-with-newline}
+Usage: {usage}
+
+Concatenate FILE(s) to standard output.
+With no FILE, or when FILE is -, read standard input
+
+{options}
+
+Examples:
+{tab}{bin} foo bar    # Outputs foo bar in rainbow colors
+{tab}fortune | {bin}  # Outputs a rainbow cookie
+";
+
+#[derive(Parser, Debug)]
+#[command(version, help_template = HELP_TEMPLATE)]
+struct Args {
+    file: Vec<PathBuf>,
+
+    /// Rainbow spread
+    #[arg(short = 'p', long, default_value_t = 3.0)]
+    spread: f64,
+
+    /// Rainbow frequency
+    #[arg(short, long, default_value_t = 0.1)]
+    freq: f64,
+
+    /// Rainbow seed, 0 for random
+    #[arg(short, long, default_value_t = 0)]
+    seed: u32,
+}
+
+impl Args {
+    fn get_input(&self) -> String {
+        let mut buf = String::new();
+        if self.file.is_empty() || self.file[0].to_str() == Some("-") {
+            io::stdin().lock().read_to_string(&mut buf).unwrap();
+        } else {
+            for path in &self.file {
+                buf.push_str(&std::fs::read_to_string(path).unwrap());
+            }
+        }
+        buf
+    }
+
+    fn get_seed(&self) -> u32 {
+        if self.seed == 0 {
+            rand::thread_rng().gen()
+        } else {
+            self.seed
+        }
+    }
+}
 
 fn rainbow(freq: f64, i: f64) -> (u8, u8, u8) {
     let red = (freq * i + 0.0).sin() * 127.0 + 128.0;
@@ -10,14 +66,24 @@ fn rainbow(freq: f64, i: f64) -> (u8, u8, u8) {
 }
 
 fn main() {
-    let seed = rand::thread_rng().gen::<u32>();
+    let args = Args::parse();
 
-    for line in io::stdin().lines() {
-        for (i, c) in line.unwrap().chars().enumerate() {
-            let color = rainbow(0.1, f64::from(seed + i as u32));
-            print!("\x1b[38;2;{};{};{}m{}", color.0, color.1, color.2, c);
+    let input = args.get_input();
+    let spread = args.spread;
+    let freq = args.freq;
+    let seed = args.get_seed();
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
+    for line in input.lines() {
+        for (i, c) in line.chars().enumerate() {
+            let color = rainbow(freq, f64::from(seed + i as u32) / spread);
+            handle
+                .write(format!("\x1b[38;2;{};{};{}m{}", color.0, color.1, color.2, c).as_bytes())
+                .unwrap();
         }
-        print!("\n");
+        handle.write(b"\n").unwrap();
     }
 
     print!("\x1b[0m");
