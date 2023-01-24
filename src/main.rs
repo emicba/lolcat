@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, CommandFactory, Parser};
 use rand::Rng;
 use std::f64::consts::PI;
 use std::io::{self, Read, Write};
@@ -20,6 +20,7 @@ Examples:
 
 #[derive(Parser, Debug)]
 #[command(version, help_template = HELP_TEMPLATE)]
+#[command(disable_help_flag = true)]
 struct Args {
     file: Vec<PathBuf>,
 
@@ -34,6 +35,10 @@ struct Args {
     /// Rainbow seed, 0 for random
     #[arg(short, long, default_value_t = 0)]
     seed: u32,
+
+    /// Print help
+    #[arg(short, long, action = ArgAction::SetTrue)]
+    help: bool,
 }
 
 impl Args {
@@ -56,6 +61,12 @@ impl Args {
             self.seed
         }
     }
+
+    fn render_help() -> String {
+        <Self as CommandFactory>::command()
+            .render_help()
+            .to_string()
+    }
 }
 
 fn rainbow(freq: f64, i: f64) -> (u8, u8, u8) {
@@ -65,14 +76,7 @@ fn rainbow(freq: f64, i: f64) -> (u8, u8, u8) {
     (red as u8, green as u8, blue as u8)
 }
 
-fn main() {
-    let args = Args::parse();
-
-    let input = args.get_input();
-    let spread = args.spread;
-    let freq = args.freq;
-    let seed = args.get_seed();
-
+fn print_rainbow(input: &str, freq: f64, spread: f64, seed: u32) {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
@@ -87,4 +91,21 @@ fn main() {
     }
 
     print!("\x1b[0m");
+}
+
+fn main() {
+    let args = Args::parse();
+
+    if args.help {
+        let help = Args::render_help();
+        print_rainbow(&help, 0.4, 5.0, rand::thread_rng().gen());
+        return;
+    }
+
+    let input = args.get_input();
+    let spread = args.spread;
+    let freq = args.freq;
+    let seed = args.get_seed();
+
+    print_rainbow(&input, freq, spread, seed);
 }
