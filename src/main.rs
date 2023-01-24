@@ -20,7 +20,7 @@ Examples:
 
 #[derive(Parser, Debug)]
 #[command(version, help_template = HELP_TEMPLATE)]
-#[command(disable_help_flag = true)]
+#[command(disable_help_flag = true, disable_version_flag = true)]
 struct Args {
     file: Vec<PathBuf>,
 
@@ -39,6 +39,10 @@ struct Args {
     /// Print help
     #[arg(short, long, action = ArgAction::SetTrue)]
     help: bool,
+
+    /// Print version
+    #[arg(short, long, action = ArgAction::Version, value_parser = clap::value_parser!(bool))]
+    version: (),
 }
 
 impl Args {
