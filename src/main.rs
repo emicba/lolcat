@@ -1,5 +1,6 @@
 use clap::{ArgAction, CommandFactory, Parser};
 use rand::Rng;
+use regex::Regex;
 use std::f64::consts::PI;
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
@@ -107,6 +108,11 @@ fn main() {
     }
 
     let input = args.get_input();
+
+    // Remove ANSI color codes
+    let re = Regex::new(r"\x1b\[[\d;]*m").unwrap();
+    let input = re.replace_all(&input, "");
+
     let spread = args.spread;
     let freq = args.freq;
     let seed = args.get_seed();

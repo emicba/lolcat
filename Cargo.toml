@@ -9,3 +9,4 @@ authors = ["Emiliano Córdoba <31087818+emicba@users.noreply.github.com>"]
 [dependencies]
 clap = { version = "4.1.1", features = ["derive"] }
 rand = "0.8.5"
+regex = "1.7.1"
