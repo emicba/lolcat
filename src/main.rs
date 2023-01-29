@@ -85,9 +85,9 @@ fn print_rainbow(input: &str, freq: f64, spread: f64, seed: u32) {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
 
-    for line in input.lines() {
-        for (i, c) in line.chars().enumerate() {
-            let color = rainbow(freq, f64::from(seed + i as u32) / spread);
+    for (i, line) in input.lines().enumerate() {
+        for (k, c) in line.chars().enumerate() {
+            let color = rainbow(freq, f64::from(seed + i as u32 + k as u32) / spread);
             handle
                 .write(format!("\x1b[38;2;{};{};{}m{}", color.0, color.1, color.2, c).as_bytes())
                 .unwrap();
